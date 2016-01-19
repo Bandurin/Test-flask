@@ -8,6 +8,17 @@ from app.forms import LoginForm
 from flask.ext.login import login_user, logout_user, current_user, login_required
 from app.models import User, ROLE_USER, ROLE_ADMIN
 import subprocess
+import smbus
+import time
+
+
+
+# Access the i2c bus
+bus = smbus.SMBus(1)
+
+# This is the address we setup in the Arduino Program
+address = 0x04
+
 
 @app.route('/')
 @app.route('/index')
@@ -117,19 +128,38 @@ AVAILABLE_COMMANDS = {
     'Reset': RESET
 }
 
+
+
+
+def writeNumber(value):
+    bus.write_i2c_block_data(address, 0, value)
+    #bus.write_byte(address, value)
+    return -1
+
+def readNumber():
+    number = bus.read_i2c_block_data(address, 0, 3)
+    #number = bus.read_byte(address)
+    return number
+
+
 @app.route('/<cmd>')
 def command(cmd=None):
     if cmd == RESET:
         print('Reset')
+        vol = 0
         camera_command = "X"
         response = "Resetting ..."
     else:
+        vol = 1
         print('ELSE')
         camera_command = cmd[0].upper()
         response = "Moving {}".format(cmd.capitalize())
 
     # ser.write(camera_command)
+    var = [vol,'150','0']
+    writeNumber(var)
     return response, 200, {'Content-Type': 'text/plain'}
+
 
 
 

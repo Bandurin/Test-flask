@@ -7,6 +7,7 @@ from time import gmtime, strftime
 from app.forms import LoginForm
 from flask.ext.login import login_user, logout_user, current_user, login_required
 from app.models import User, ROLE_USER, ROLE_ADMIN
+import subprocess
 
 @app.route('/')
 @app.route('/index')
@@ -51,22 +52,9 @@ def user(nickname):
 def before_request():
     g.user = current_user
 
-
-@app.route('/time')
-@login_required
-def datetime():
-    dt= strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())
-    return render_template("time.html",
-                           title= 'Time',
-                           date = dt)
-
-
 @lm.user_loader
 def load_user(id):
     return User.query.get(int(id))
-
-
-
 
 @app.route('/login', methods=['GET', 'POST'] )
 @oid.loginhandler
@@ -82,9 +70,6 @@ def login():
                            title = 'Sign In',
                            form = form,
                            providers = app.config['OPENID_PROVIDERS'])
-
-
-
 
 @oid.after_login
 def after_login(resp):
@@ -110,3 +95,55 @@ def after_login(resp):
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+
+
+@app.route('/time')
+@login_required
+def datetime():
+    dt= strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())
+    return render_template('time.html',
+                           title= 'Time',
+                           date = dt,
+                           commands = AVAILABLE_COMMANDS)
+
+
+LEFT, RIGHT, UP, DOWN, RESET = "left", "right", "up", "down", "reset"
+AVAILABLE_COMMANDS = {
+    'Left': LEFT,
+    'Right': RIGHT,
+    'Up': UP,
+    'Down': DOWN,
+    'Reset': RESET
+}
+
+@app.route('/<cmd>')
+def command(cmd=None):
+    if cmd == RESET:
+        print('Reset')
+        camera_command = "X"
+        response = "Resetting ..."
+    else:
+        print('ELSE')
+        camera_command = cmd[0].upper()
+        response = "Moving {}".format(cmd.capitalize())
+
+    # ser.write(camera_command)
+    return response, 200, {'Content-Type': 'text/plain'}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
